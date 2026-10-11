@@ -4,6 +4,7 @@ import Project from '../models/project.model.js';
 import UploadImage from '../services/uploadImage.service.js';
 import generateToken from '../services/token.service.js';
 import Certificate from '../models/certificate.model.js';
+import Message from '../models/message.model.js';
 
 // Helper function to safely parse arrays from FormData
 const parseArrayInput = (input) => {
@@ -44,8 +45,8 @@ export const adminLogin = async (req, res) => {
         // Cookie options for security
         res.cookie('token', token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
+            secure: true, // Set to true if using HTTPS
+            sameSite: 'none',
             maxAge: 3600000 // 1 hour
         });
 
@@ -151,6 +152,41 @@ export const addCertificate = async (req, res) => {
     }
 };
 
+// ==========================================
+// ADD MESSAGE
+// ==========================================
+export const addMessage = async (req, res) => {
+    try {
+        const { name, subject, email, message } = req.body;
+
+        const newMessage = await Message.create({
+            name: name.trim(),
+            subject: subject.trim(),
+            email: email.trim(),
+            message: message.trim()
+        });
+
+        return res.status(201).json({ 
+            message: 'Message added successfully', 
+            message: newMessage
+        })
+    } catch (error) {
+        console.error('Error adding message:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+}
+// ==========================================
+// GET ALL MESSAGES
+// ==========================================
+export const getAllMessages = async (req, res) => {
+    try {
+        const messages = await Message.find().sort({ createdAt: -1 });
+        return res.status(200).json(messages);
+    } catch (error) {
+        console.error('Error fetching messages:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
 // ==========================================
 // GET ALL PROJECTS
 // ==========================================

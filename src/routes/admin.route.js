@@ -1,5 +1,5 @@
 import express from "express";
-import { adminLogin, addProject, addCertificate, getAllProjects, getAllCertificates } from '../controllers/admin.controller.js';
+import { adminLogin, addProject, addCertificate, getAllProjects, getAllCertificates, addMessage, getAllMessages } from '../controllers/admin.controller.js';
 import multer from 'multer';
 
 const router = express.Router();
@@ -11,5 +11,6 @@ router.post("/add-project", upload.single('image'), addProject);
 router.get("/projects", getAllProjects);
 router.post("/add-certificate", upload.array('images',2), addCertificate);
 router.get("/certificates", getAllCertificates);
-
+router.post("/message", addMessage);
+router.get("/all-messages", getAllMessages);
 export default router;
