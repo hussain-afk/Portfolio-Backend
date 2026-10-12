@@ -5,6 +5,7 @@ import UploadImage from '../services/uploadImage.service.js';
 import generateToken from '../services/token.service.js';
 import Certificate from '../models/certificate.model.js';
 import Message from '../models/message.model.js';
+import InWorkingProject from '../models/inWorkingProject.model.js';
 
 // Helper function to safely parse arrays from FormData
 const parseArrayInput = (input) => {
@@ -73,12 +74,14 @@ export const addProject = async (req, res) => {
         const image = req.file;
 
         // Validation check
-        if (!title || !category || !description || !image) {
+        if (!title || !category || !description) {
             return res.status(400).json({ message: 'Title, category, description, and image are required' });
         }
-
+        let uploadedImage = "";
         // Upload image to cloud storage
-        const uploadedImage = await UploadImage(image);
+        if (image) {
+            uploadedImage = await UploadImage(image);
+        }
 
         // Safe parsing for tech stack array
         const parsedTech = parseArrayInput(tech);
@@ -93,15 +96,45 @@ export const addProject = async (req, res) => {
             githubUrl: githubUrl || null
         });
 
-        return res.status(201).json({ 
-            message: 'Project added successfully', 
-            project: newProject 
+        return res.status(201).json({
+            message: 'Project added successfully',
+            project: newProject
         });
     } catch (error) {
         console.error('Error adding project:', error);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
+// ==========================================
+// ADD IN WORKING PROJECT
+// ==========================================
+
+export const addInWorkingProject = async (req, res) => {
+    const { title, description, tech, liveUrl, githubUrl } = req.body;
+    try {
+        const image = req.file;
+        if (!title || !description || !tech || !liveUrl || !githubUrl) {
+            return res.status(400).json({ message: 'All fields are required' });
+        }
+        let uploadedImage = "";
+        if (image) {
+            uploadedImage = await UploadImage(image);
+        }
+        const parsedTech = parseArrayInput(tech);
+        const newInWorkingProject = await InWorkingProject.create({
+            title: title.trim(),
+            description: description.trim(),
+            image: uploadedImage,
+            tech: parsedTech,
+            liveUrl: liveUrl || null,
+            githubUrl: githubUrl || null
+        });
+        return res.status(201).json(newInWorkingProject);
+    } catch (error) {
+        console.error('Error adding in working project:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+}
 
 // ==========================================
 // ADD CERTIFICATE
@@ -109,7 +142,7 @@ export const addProject = async (req, res) => {
 export const addCertificate = async (req, res) => {
     try {
         const { title, issuer, date, expires, credentialId, credentialUrl, skills, logo } = req.body;
-        
+
         const files = req.files || [];
         const primaryImage = files[0] || null;
         const secondImage = files[1] || null;
@@ -142,9 +175,9 @@ export const addCertificate = async (req, res) => {
             logo: uploadedImage2
         });
 
-        return res.status(201).json({ 
-            message: 'Certificate added successfully', 
-            certificate: newCertificate 
+        return res.status(201).json({
+            message: 'Certificate added successfully',
+            certificate: newCertificate
         });
     } catch (error) {
         console.error('Error adding certificate:', error);
@@ -166,8 +199,8 @@ export const addMessage = async (req, res) => {
             message: message.trim()
         });
 
-        return res.status(201).json({ 
-            message: 'Message added successfully', 
+        return res.status(201).json({
+            message: 'Message added successfully',
             message: newMessage
         })
     } catch (error) {
@@ -196,6 +229,19 @@ export const getAllProjects = async (req, res) => {
         return res.status(200).json(projects);
     } catch (error) {
         console.error('Error fetching projects:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
+// ==========================================
+// GET ALL IN-WORKING PROJECTS
+// ==========================================
+
+export const getAllInWorkingProjects = async (req, res) => {
+    try {
+        const inWorkingProjects = await InWorkingProject.find();
+        return res.status(200).json(inWorkingProjects);
+    } catch (error) {
+        console.error('Error fetching in working projects:', error);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
