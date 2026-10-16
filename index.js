@@ -19,9 +19,13 @@ app.use(cookieParser());
 
 app.use('/admin', adminRoutes);
 
+app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
+
 
 connectDB();
 // createAdmin();
+
+// seedHeroSection;
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

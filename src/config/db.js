@@ -6,6 +6,7 @@ const connectDB = async () => {
         const connection = await mongoose.connect(envConfig.mongoUri, {
             dbName: 'official_portfolio',
         })
+        // await seedHeroSection(); // Call the seedHeroSection function after successful connection
         console.log(`MongoDB connected: ${connection.connection.host}`);
     } catch (error) {
         console.error(`Error: ${error.message}`);

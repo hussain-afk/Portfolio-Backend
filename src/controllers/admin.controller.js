@@ -6,6 +6,7 @@ import generateToken from '../services/token.service.js';
 import Certificate from '../models/certificate.model.js';
 import Message from '../models/message.model.js';
 import InWorkingProject from '../models/inWorkingProject.model.js';
+import Hero from '../models/hero.model.js';
 
 // Helper function to safely parse arrays from FormData
 const parseArrayInput = (input) => {
@@ -46,8 +47,8 @@ export const adminLogin = async (req, res) => {
         // Cookie options for security
         res.cookie('token', token, {
             httpOnly: true,
-            secure: true, // Set to true if using HTTPS
-            sameSite: 'none',
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             maxAge: 3600000 // 1 hour
         });
 
@@ -61,6 +62,19 @@ export const adminLogin = async (req, res) => {
         return res.status(200).json(adminData);
     } catch (error) {
         console.error('Error during admin login:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const getCurrentAdmin = async (req, res) => {
+    try {
+        const admin = await Admin.findById(req.admin.id).select('_id email name');
+        if (!admin) {
+            return res.status(401).json({ message: 'Admin account not found' });
+        }
+        return res.status(200).json({ _id: admin._id, email: admin.email, name: admin.name || 'Admin' });
+    } catch (error) {
+        console.error('Error fetching current admin:', error);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -191,6 +205,9 @@ export const addCertificate = async (req, res) => {
 export const addMessage = async (req, res) => {
     try {
         const { name, subject, email, message } = req.body;
+        if (!name?.trim() || !subject?.trim() || !email?.trim() || !message?.trim()) {
+            return res.status(400).json({ message: 'Name, subject, email and message are required' });
+        }
 
         const newMessage = await Message.create({
             name: name.trim(),
@@ -255,6 +272,39 @@ export const getAllCertificates = async (req, res) => {
         return res.status(200).json(certificates);
     } catch (error) {
         console.error('Error fetching certificates:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+// ==========================================
+// UPDATE HERO SECTION
+// ==========================================
+
+export const updateHeroSection = async (req, res) => {
+    try {
+        const { avalaible, mainHeading, paragraph, autoWritingText } = req.body;
+        if (typeof avalaible !== 'boolean' || !mainHeading?.trim() || !paragraph?.trim() || !autoWritingText?.trim()) {
+            return res.status(400).json({ message: 'Availability, heading, paragraph and roles are required' });
+        }
+        const hero = await Hero.findOneAndUpdate({}, {
+            avalaible,
+            mainHeading: mainHeading.trim(),
+            paragraph: paragraph.trim(),
+            autoWritingText: autoWritingText.trim()
+        }, { new: true, upsert: true, setDefaultsOnInsert: true });
+        return res.status(200).json(hero);
+    } catch (error) {
+        console.error('Error updating hero section:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const getHeroSection = async (req, res) => {
+    try {
+        const hero = await Hero.findOne().sort({ _id: -1 });
+        return res.status(200).json(hero);
+    } catch (error) {
+        console.error('Error fetching hero section:', error);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
